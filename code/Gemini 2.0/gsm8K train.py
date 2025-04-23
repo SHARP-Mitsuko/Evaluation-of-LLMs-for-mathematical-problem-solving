@@ -17,7 +17,7 @@ def to_markdown(text):
   return Markdown(textwrap.indent(text, '> ', predicate=lambda _: True))
 
 # Use Gemini
-GOOGLE_API_KEY='AIzaSyDQsmHsHjTkUl6U67F-5RWL4WMIftj3kzA'
+GOOGLE_API_KEY=''
 
 genai.configure(api_key=GOOGLE_API_KEY)
 
