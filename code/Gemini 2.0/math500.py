@@ -10,7 +10,7 @@ import difflib
 from sympy import sympify, sympify, latex
 
 # Configure API
-GOOGLE_API_KEY = 'AIzaSyDQsmHsHjTkUl6U67F-5RWL4WMIftj3kzA'
+GOOGLE_API_KEY = ''
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel('gemini-2.0-flash')
 
