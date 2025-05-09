@@ -17,9 +17,9 @@ def to_markdown(text):
   return Markdown(textwrap.indent(text, '> ', predicate=lambda _: True))
 
 # Use Gemini
-GOOGLE_API_KEY=''
+API_KEY='api'
 
-genai.configure(api_key=GOOGLE_API_KEY)
+genai.configure(api_key=API_KEY)
 
 for m in genai.list_models():
   if 'generateContent' in m.supported_generation_methods:
@@ -34,7 +34,7 @@ qstart = 0
 rpm = 15
 task_per = 1319
 answer_ai = np.zeros(task_per)
-gsm = 'test.jsonl'
+gsm = 'datasets/gsm8k.jsonl'
 gap = 979
 
 df_new = 1
