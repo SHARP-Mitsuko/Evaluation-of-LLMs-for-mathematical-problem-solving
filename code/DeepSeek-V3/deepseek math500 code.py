@@ -11,23 +11,18 @@ from typing import Optional, Dict, Any, Tuple
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# ======================
-# 配置项（必须修改）
-# ======================
+
 DEEPSEEK_API_KEY = "sk-da0025c4e3f84de082271474bd734f96"
 API_URL = "https://api.deepseek.com/v1/chat/completions"
 MODEL_NAME = "deepseek-chat"
-DATA_PATH = "math500.jsonl"
+DATA_PATH = "datsets/math500.jsonl"
 OUTPUT_PATH = "evaluation_results.json"
 MAX_RETRIES = 3
 REQUEST_TIMEOUT = 45
 ERROR_MARGIN = 0.0001
 
-# ======================
-# 核心功能模块
-# ======================
+
 class StatsCollector:
-    """多维度统计收集器"""
     def __init__(self):
         self.data = defaultdict(lambda: {'correct': 0, 'total': 0})
     
@@ -40,7 +35,6 @@ class StatsCollector:
         return self.data[key]['correct'] / self.data[key]['total'] if self.data[key]['total'] else 0.0
 
 def retry_decorator():
-    """延迟导入避免环境检查前触发依赖问题"""
     from tenacity import retry, stop_after_attempt, wait_exponential
     return retry(
         stop=stop_after_attempt(MAX_RETRIES),
@@ -49,7 +43,6 @@ def retry_decorator():
 
 @retry_decorator()
 def call_deepseek_api(problem: str) -> str:
-    """带详细错误处理的API调用"""
     headers = {
         "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
         "Content-Type": "application/json",
@@ -59,7 +52,7 @@ def call_deepseek_api(problem: str) -> str:
         "model": MODEL_NAME,
         "messages": [{
             "role": "user",
-            "content": f"请直接给出数值答案（不要任何解释）。问题：{problem}"
+            "content": f"please give numeric answer directly, question：{problem}"
         }],
         "temperature": 0.1,
         "max_tokens": 50
@@ -79,7 +72,7 @@ def call_deepseek_api(problem: str) -> str:
                 "headers": dict(response.headers),
                 "body": response.text[:500]
             }
-            raise requests.HTTPError(f"非200响应: {json.dumps(error_info, indent=2)}")
+            raise requests.HTTPError(f": {json.dumps(error_info, indent=2)}")
             
         return response.json()['choices'][0]['message']['content']
         
@@ -88,10 +81,9 @@ def call_deepseek_api(problem: str) -> str:
     except requests.exceptions.ProxyError as e:
         raise RuntimeError(f"代理错误: {str(e)}")
     except json.JSONDecodeError as e:
-        raise RuntimeError(f"响应解析失败: {str(e)}\n原始响应: {response.text[:500]}")
+        raise RuntimeError(f"响应解析失败: {str(e)}\n original response: {response.text[:500]}")
 
 def format_answer(value: Optional[float]) -> Tuple[str, str]:
-    """安全格式化答案值，返回（显示格式，类型标记）"""
     if value is None:
         return ("N/A", "missing")
     try:
@@ -102,7 +94,6 @@ def format_answer(value: Optional[float]) -> Tuple[str, str]:
         return (f"Invalid ({str(e)})", "error")
 
 def extract_number(text: str) -> Optional[float]:
-    """增强型答案提取器（带解析日志）"""
     original_text = text
     text = text.replace('$', '').replace(' ', '').replace(',', '')
     
@@ -112,7 +103,7 @@ def extract_number(text: str) -> Optional[float]:
         (r'(\d+\.?\d*%)', 'percentage'),
         (r'≈\s*([\d.]+)', 'approximate'),
         (r'([-+]?\d+/\d+)', 'fraction'),
-        (r'最终答案[：:\s]*([-+±]?\d*\.?\d+)', 'chinese'),
+        (r'final result[：:\s]*([-+±]?\d*\.?\d+)', 'chinese'),
         (r'answer[\s:]*([-+±]?\d*\.?\d+)', 'english')
     ]
     
@@ -134,7 +125,6 @@ def extract_number(text: str) -> Optional[float]:
             except (ValueError, ZeroDivisionError):
                 continue
     
-    # 兜底策略：尝试提取最后一个数值
     try:
         numbers = re.findall(r'[-+]?\d*\.?\d+', text)
         if numbers:
@@ -145,7 +135,6 @@ def extract_number(text: str) -> Optional[float]:
     return None
 
 def is_answer_correct(model_num: Optional[float], ref_num: Optional[float]) -> bool:
-    """智能答案比较"""
     try:
         if None in (model_num, ref_num):
             return False
@@ -162,11 +151,7 @@ def is_answer_correct(model_num: Optional[float], ref_num: Optional[float]) -> b
     except (TypeError, ValueError):
         return False
 
-# ======================
-# 环境检查模块
-# ======================
 def check_environment():
-    """增强型环境检查"""
     required_packages = {
         'tenacity': '8.2.0',
         'requests': '2.32.3',
