@@ -14,7 +14,7 @@ def load_jsonl(file_path):
     return data
 
 # Load training data
-train_data = load_jsonl("grade_school_math/data/train.jsonl")
+train_data = load_jsonl("datasets/gsm8k.jsonl")
 
 def clean_number(num_str):
     """ Clean numeric string: remove commas, spaces, percent signs, and convert to int or float """
