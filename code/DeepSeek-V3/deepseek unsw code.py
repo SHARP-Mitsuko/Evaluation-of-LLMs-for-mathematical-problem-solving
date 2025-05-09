@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 # 配置
 API_KEY = "sk-da0025c4e3f84de082271474bd734f96"
-CSV_PATH = "problems.csv"
+CSV_PATH = "datasets/UNSW-problems/unsw.csv"
 OUTPUT_CSV = "results.csv"
 API_URL = "https://api.deepseek.com/v1/chat/completions"
 
