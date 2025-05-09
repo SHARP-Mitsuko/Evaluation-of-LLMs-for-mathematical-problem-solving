@@ -10,14 +10,14 @@ import difflib
 from sympy import sympify, sympify, latex
 
 # Configure API
-GOOGLE_API_KEY = ''
-genai.configure(api_key=GOOGLE_API_KEY)
+API_KEY = 'api'
+genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Initialize variables
 rpm = 15  # Number of questions per batch
 task_per = 500  # Total questions to process
-math_file = 'math500.jsonl'  # New JSONL file
+math_file = 'datasets/math500.jsonl'  # New JSONL file
 
 test_results = []  # List to store results
 
