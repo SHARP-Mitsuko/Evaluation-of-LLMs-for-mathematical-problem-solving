@@ -4,14 +4,14 @@ import re
 import time
 import matplotlib.pyplot as plt
 
-# 配置 DeepSeek API
-API_KEY = "sk-da0025c4e3f84de082271474bd734f96"  # 替换为你的密钥
+# Configure DeepSeek API
+API_KEY = "api"  # Replace with your API key
 client = openai.OpenAI(
     api_key=API_KEY,
     base_url="https://api.deepseek.com/v1"
 )
 
-# 数据加载
+# Load data
 def load_jsonl(file_path):
     data = []
     with open(file_path, "r", encoding="utf-8") as f:
@@ -19,9 +19,9 @@ def load_jsonl(file_path):
             data.append(json.loads(line.strip()))
     return data
 
-train_data = load_jsonl(r"C:\Users\wcf10\Desktop\math_test\gsm8k\train.jsonl")  # 数据集路径
+train_data = load_jsonl(r"datasets/gsm8k.jsonl")  # Path to dataset
 
-# 答案处理
+# Clean numeric string
 def clean_number(num_str):
     num_str = re.sub(r"[,%\s]", "", str(num_str))
     try:
@@ -30,14 +30,14 @@ def clean_number(num_str):
     except:
         return num_str
 
-# 模型调用（含重试逻辑）
+# Call model with retry logic
 def solve_math_problem(question, max_retries=3):
     for attempt in range(max_retries):
         try:
             response = client.chat.completions.create(
                 model="deepseek-chat",
                 messages=[
-                    {"role": "system", "content": "严格按以下规则回答：1.只返回纯数字 2.小数保留两位 3.无单位或文本"},
+                    {"role": "system", "content": "Strictly follow these rules: 1. Return only a pure number 2. Keep two decimal places for decimals 3. No units or text"},
                     {"role": "user", "content": question}
                 ],
                 temperature=0.1
@@ -46,19 +46,19 @@ def solve_math_problem(question, max_retries=3):
             numbers = re.findall(r"-?\d+\.?\d*", answer)
             return clean_number(numbers[-1]) if numbers else "N/A"
         except Exception as e:
-            print(f"第 {attempt+1} 次重试，错误：{str(e)}")
+            print(f"Retry {attempt + 1}, error: {str(e)}")
             time.sleep(2)
-    return "❌ 超过最大重试次数"
+    return "❌ Exceeded max retries"
 
-# 主测试流程
-total = 7473  # 测试题量（GSM8K完整测试设为7473）
+# Main testing workflow
+total = 7473  # Number of test samples (full GSM8K test set)
 correct_count = 0
 error_log = []
 
 for i in range(total):
     try:
         question = train_data[i]["question"]
-        correct_answer = train_data[i]["answer"].split("#### ")[-1].strip()  # 适配GSM8K答案格式
+        correct_answer = train_data[i]["answer"].split("#### ")[-1].strip()  # Adapt to GSM8K format
         
         pred_answer = solve_math_problem(question)
         correct_clean = clean_number(correct_answer)
@@ -67,30 +67,30 @@ for i in range(total):
             correct_count += 1
         else:
             error_log.append({
-                "题号": i+1,
-                "问题": question,
-                "正确答案": correct_clean,
-                "模型答案": pred_answer
+                "Question #": i + 1,
+                "Question": question,
+                "Correct Answer": correct_clean,
+                "Model Answer": pred_answer
             })
-            print(f"❌ 第 {i+1} 题错误")
+            print(f"❌ Question {i + 1} incorrect")
         
-        time.sleep(0.5)  # 控制请求频率
+        time.sleep(0.5)  # Throttle requests
         
     except Exception as e:
-        print(f"数据处理异常：{str(e)}")
+        print(f"Data processing error: {str(e)}")
 
-# 输出结果
+# Output results
 accuracy = (correct_count / total) * 100
-print(f"\n✅ 最终正确率：{accuracy:.2f}%")
+print(f"\n✅ Final accuracy: {accuracy:.2f}%")
 
-# 保存错误日志
+# Save error log
 with open("error_log.json", "w", encoding="utf-8") as f:
     json.dump(error_log, f, ensure_ascii=False, indent=2)
 
-# 可视化
-plt.figure(figsize=(10,6))
-plt.bar(["正确", "错误"], [correct_count, total-correct_count], color=["#4CAF50", "#F44336"])
-plt.title(f"DeepSeek GSM8K 测试结果（{total}题）")
-plt.ylabel("题数")
+# Visualization
+plt.figure(figsize=(10, 6))
+plt.bar(["Correct", "Incorrect"], [correct_count, total - correct_count], color=["#4CAF50", "#F44336"])
+plt.title(f"DeepSeek GSM8K Test Results ({total} Questions)")
+plt.ylabel("Number of Questions")
 plt.savefig("gsm8k_result.png", dpi=300)
 plt.show()
